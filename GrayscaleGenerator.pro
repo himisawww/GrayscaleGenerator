@@ -24,6 +24,8 @@ SOURCES += \
     src/image_saver.cpp \
     src/main.cpp \
     src/mesh.cpp \
+    src/geopotential.cpp \
+    src/geopotential_impl.cpp \
     src/mesh_dispatcher.cpp \
     src/opencl_interface.cpp \
     src/renderer.cpp \
@@ -38,12 +40,14 @@ HEADERS += \
     src/include/image_saver.h \
     src/include/kernel.h \
     src/include/mesh.h \
+    src/include/geopotential.h \
     src/include/mesh_dispatcher.h \
     src/include/opencl.h \
     src/include/opencl_interface.h \
     src/include/renderer.h \
     src/include/triangle.h \
     src/include/vector3d.h \
+    src/include/vec_t.h \
     src/include/widget.h \
     third_party/OpenCL/include/CL/opencl.hpp \
     third_party/tinyobjloader/tiny_obj_loader.h

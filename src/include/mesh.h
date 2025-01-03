@@ -19,6 +19,7 @@ public:
     bool isMeshLoaded() const;
     int vertexCount() const;
     int faceCount() const;
+    std::string makeGeopotential(int max_degree=6) const;
 
 private:
     std::vector<CLTriangle> triangles;
