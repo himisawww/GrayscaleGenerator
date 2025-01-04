@@ -39,7 +39,8 @@ int DDS::save(std::string filePath) {
     float range = maxValue - minValue;
     int bias = static_cast<int>(primeMeridian * imageWidth / 360.0);
 
-    char *imageData = new char[imageWidth * imageHeight * colorDepth / 8];
+    int channelSize = colorDepth / 8;
+    char *imageData = new char[imageWidth * imageHeight * channelSize];
     for (int j = 0; j < imageHeight; j++) {
         for (int i = 0; i < imageWidth; i++) {
             int x = i;
@@ -77,7 +78,7 @@ int DDS::save(std::string filePath) {
     }
     outputStream.write(reinterpret_cast<const char *>(&magic), 4);
     outputStream.write(reinterpret_cast<const char *>(&header), sizeof(header));
-    outputStream.write(reinterpret_cast<const char *>(imageData), imageWidth * imageHeight * colorDepth / 8);
+    outputStream.write(reinterpret_cast<const char *>(imageData), imageWidth * imageHeight * channelSize);
     outputStream.close();
 
     delete[] imageData;
