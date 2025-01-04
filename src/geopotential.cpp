@@ -1,21 +1,81 @@
 #include"geopotential.h"
 #include"mesh.h"
+#include"threadpool.h"
 
 using namespace geopotential;
 
 constexpr double pi=3.14159265358979323;
+constexpr size_t cn_tasksize=1024;
+
+static void thread_work(void *param,size_t){
+    auto *ptask=(std::function<void()>*)param;
+    (*ptask)();
+    delete ptask;
+}
+
+template<typename T,typename U>
+void add_to(std::pair<T,U> &presult,const std::pair<T,U> &rhs){
+    presult.first+=rhs.first;
+    presult.second+=rhs.second;
+}
+template<typename T>
+void add_to(T &presult,const T &rhs){
+    presult+=rhs;
+}
+
+static std::mutex global_mutex;
+template<typename R,typename F,typename... Args>
+void integrate_parallel(ThreadPool::TaskGroup *pgroup,R *presult,const trigmesh &mesh,F func,Args&&... args){
+    auto *pthreadpool=ThreadPool::get_thread_pool();
+    if(!pthreadpool){
+        for(const auto &t:mesh)
+            add_to(*presult,(t.*func)(std::forward<Args>(args)...));
+        return;
+    }
+    size_t mesh_size=mesh.size();
+    size_t n_tasks=std::max(size_t(1),(mesh_size+cn_tasksize/2)/cn_tasksize);
+    for(size_t i=0;i<n_tasks;++i){
+        size_t imin=i*mesh_size/n_tasks;
+        size_t imax=(i+1)*mesh_size/n_tasks;
+        pthreadpool->add_task(thread_work,new std::function<void()>([&,imin,imax,func,presult](){
+            R local_sum{};
+            for(size_t j=imin;j<imax;++j)
+                add_to(local_sum,(mesh[j].*func)(std::forward<Args>(args)...));
+            global_mutex.lock();
+            add_to(*presult,local_sum);
+            global_mutex.unlock();
+            }),pgroup);
+    }
+}
+
+static void integrate_finish(ThreadPool::TaskGroup *pgroup){
+    auto *pthreadpool=ThreadPool::get_thread_pool();
+    if(pthreadpool)
+        pthreadpool->wait_for_all(pgroup);
+}
+
+size_t geopotential::get_remaining_task(){
+    auto *pthreadpool=ThreadPool::get_thread_pool();
+    return pthreadpool?pthreadpool->busy():-1;
+}
 
 bool trigmesh::initialize(){
     for(int i=0;i<2;++i){
-        auto mxyz=integrate_multiple(&trig::m,&trig::cx,&trig::cy,&trig::cz);
-        volume=mxyz[0];
+        volume=0;
+        offset=vec(0);
+        ThreadPool::TaskGroup g;
+        integrate_parallel(&g,&volume,*this,&trig::m);
+        integrate_parallel(&g,&offset.x,*this,&trig::cx);
+        integrate_parallel(&g,&offset.y,*this,&trig::cy);
+        integrate_parallel(&g,&offset.z,*this,&trig::cz);
+        integrate_finish(&g);
         if(!(volume>0&&volume!=INFINITY)){
             error_msg+="Non-finite-positive volume. Check model normals.\n";
             return false;
         }
-        offset.x=mxyz[1]/volume;
-        offset.y=mxyz[2]/volume;
-        offset.z=mxyz[3]/volume;
+        offset.x/=volume;
+        offset.y/=volume;
+        offset.z/=volume;
         if(i)break;
         for(auto &t:*this){
             t.p1-=offset;
@@ -56,30 +116,44 @@ static double principia_factor(int n,int m){
     return m==0?-std::sqrt(factor):std::sqrt(factor/2);
 }
 
-std::string Mesh::makeGeopotential(bool *is_success, int max_degree) const{
-    if(max_degree<2||6<max_degree) {
-        *is_success = false;
-        return "MaxDegree should be in [2,6]";
+bool Mesh::makeGeopotential(std::string &result,int max_degree,size_t n_thread) const{
+    if(max_degree<2||6<max_degree){
+        result="MaxDegree should be in [2,6]";
+        return false;
     }
+
+    class ThreadPoolGuard{
+    public:
+        ThreadPoolGuard(size_t n){
+            if(n==1)return;
+            ThreadPool::thread_local_pool_alloc();
+            if(n)ThreadPool::get_thread_pool()->resize(n);
+        }
+        ~ThreadPoolGuard(){ ThreadPool::thread_local_pool_free(); }
+    } _(n_thread);
 
     trigmesh gpmesh;
-    for(auto &t:triangles) {
-        gpmesh.emplace_back(t);
+    for(const auto &t:triangles)
+        gpmesh.emplace_back(
+            vec(t.v[0].x,t.v[0].y,t.v[0].z),
+            vec(t.v[1].x,t.v[1].y,t.v[1].z),
+            vec(t.v[2].x,t.v[2].y,t.v[2].z));
+
+    if(!gpmesh.initialize()){
+        result=gpmesh.error_msg;
+        return false;
     }
 
-    if(!gpmesh.initialize()) {
-        *is_success = false;
-        return gpmesh.error_msg;
-    }
+    auto gpdata=gpmesh.integrate_geopotential(max_degree);
 
-    std::string result("    reference_radius        = ");
+    result="    reference_radius        = ";
     result+=double_string(gpmesh.ref_radius);
     result+=" km\n";
     for(int n=2;n<=max_degree;++n){
-        auto data=gpmesh.integrate_geopotential(n);
-        if(data.size()!=n*2+1) {
-            *is_success = false;
-            return "Degree not implemented";
+        auto data=gpdata[n];
+        if(data.size()!=n*2+1){
+            result="Degree not implemented";
+            return false;
         }
         result+="    geopotential_row {\n";
         result+="      degree = ";
@@ -101,8 +175,7 @@ std::string Mesh::makeGeopotential(bool *is_success, int max_degree) const{
         }
         result+="    }\n";
     }
-    *is_success = true;
-    return result;
+    return true;
 }
 
 double trig::solid_angle(const vec &r) const{
@@ -119,18 +192,17 @@ double trig::solid_angle(const vec &r) const{
 
 double trigmesh::solid_angle(const vec &r) const{
     double result=0;
-    for(const auto &t:*this)
-        result+=t.solid_angle(r);
+    ThreadPool::TaskGroup g;
+    integrate_parallel(&g,&result,*this,&trig::solid_angle,r);
+    integrate_finish(&g);
     return result;
 }
 
 std::pair<double,vec> trigmesh::gravity(const vec &r) const{
     std::pair<double,vec> result(0,0);
-    for(const auto &t:*this){
-        auto tr=t.gravity(r);
-        result.first+=tr.first;
-        result.second+=tr.second;
-    }
+    ThreadPool::TaskGroup g;
+    integrate_parallel(&g,&result,*this,&trig::gravity,r);
+    integrate_finish(&g);
     return result;
 }
 
@@ -177,40 +249,79 @@ std::pair<double,vec> trig::gravity(const vec &r) const{
     return result;
 }
 
-std::vector<double> trigmesh::integrate_geopotential(int d) const{
-    std::vector<double> result;
-    if(initialized)switch(d)
-    {
-    case 2:{
-        auto gp=integrate_multiple(&trig::j2,&trig::c21,&trig::c22,&trig::s21,&trig::s22);
-        result.assign(gp.begin(),gp.end());
-        break;
+std::map<int,std::vector<double>> trigmesh::integrate_geopotential(int max_degree) const{
+    std::map<int,std::vector<double>> result;
+    if(initialized&&max_degree<=6){
+        for(int d=2;d<=max_degree;++d)
+            result[d].resize(2*d+1,0);
+        ThreadPool::TaskGroup g;
+        double *presult;
+        switch(max_degree)
+        {
+        case 6:
+            presult=result.at(6).data();
+            integrate_parallel(&g,presult++,*this,&trig::j6);
+            integrate_parallel(&g,presult++,*this,&trig::c61);
+            integrate_parallel(&g,presult++,*this,&trig::c62);
+            integrate_parallel(&g,presult++,*this,&trig::c63);
+            integrate_parallel(&g,presult++,*this,&trig::c64);
+            integrate_parallel(&g,presult++,*this,&trig::c65);
+            integrate_parallel(&g,presult++,*this,&trig::c66);
+            integrate_parallel(&g,presult++,*this,&trig::s61);
+            integrate_parallel(&g,presult++,*this,&trig::s62);
+            integrate_parallel(&g,presult++,*this,&trig::s63);
+            integrate_parallel(&g,presult++,*this,&trig::s64);
+            integrate_parallel(&g,presult++,*this,&trig::s65);
+            integrate_parallel(&g,presult++,*this,&trig::s66);
+        case 5:
+            presult=result.at(5).data();
+            integrate_parallel(&g,presult++,*this,&trig::j5);
+            integrate_parallel(&g,presult++,*this,&trig::c51);
+            integrate_parallel(&g,presult++,*this,&trig::c52);
+            integrate_parallel(&g,presult++,*this,&trig::c53);
+            integrate_parallel(&g,presult++,*this,&trig::c54);
+            integrate_parallel(&g,presult++,*this,&trig::c55);
+            integrate_parallel(&g,presult++,*this,&trig::s51);
+            integrate_parallel(&g,presult++,*this,&trig::s52);
+            integrate_parallel(&g,presult++,*this,&trig::s53);
+            integrate_parallel(&g,presult++,*this,&trig::s54);
+            integrate_parallel(&g,presult++,*this,&trig::s55);
+        case 4:
+            presult=result.at(4).data();
+            integrate_parallel(&g,presult++,*this,&trig::j4);
+            integrate_parallel(&g,presult++,*this,&trig::c41);
+            integrate_parallel(&g,presult++,*this,&trig::c42);
+            integrate_parallel(&g,presult++,*this,&trig::c43);
+            integrate_parallel(&g,presult++,*this,&trig::c44);
+            integrate_parallel(&g,presult++,*this,&trig::s41);
+            integrate_parallel(&g,presult++,*this,&trig::s42);
+            integrate_parallel(&g,presult++,*this,&trig::s43);
+            integrate_parallel(&g,presult++,*this,&trig::s44);
+        case 3:
+            presult=result.at(3).data();
+            integrate_parallel(&g,presult++,*this,&trig::j3);
+            integrate_parallel(&g,presult++,*this,&trig::c31);
+            integrate_parallel(&g,presult++,*this,&trig::c32);
+            integrate_parallel(&g,presult++,*this,&trig::c33);
+            integrate_parallel(&g,presult++,*this,&trig::s31);
+            integrate_parallel(&g,presult++,*this,&trig::s32);
+            integrate_parallel(&g,presult++,*this,&trig::s33);
+        case 2:
+            presult=result.at(2).data();
+            integrate_parallel(&g,presult++,*this,&trig::j2);
+            integrate_parallel(&g,presult++,*this,&trig::c21);
+            integrate_parallel(&g,presult++,*this,&trig::c22);
+            integrate_parallel(&g,presult++,*this,&trig::s21);
+            integrate_parallel(&g,presult++,*this,&trig::s22);
+        default:
+            break;
+        }
+        integrate_finish(&g);
+        for(int d=2;d<=max_degree;++d){
+            double multiplier=std::pow(ref_radius,double(-d))/volume;
+            for(auto &c:result.at(d))
+                c*=multiplier;
+        }
     }
-    case 3:{
-        auto gp=integrate_multiple(&trig::j3,&trig::c31,&trig::c32,&trig::c33,&trig::s31,&trig::s32,&trig::s33);
-        result.assign(gp.begin(),gp.end());
-        break;
-    }
-    case 4:{
-        auto gp=integrate_multiple(&trig::j4,&trig::c41,&trig::c42,&trig::c43,&trig::c44,&trig::s41,&trig::s42,&trig::s43,&trig::s44);
-        result.assign(gp.begin(),gp.end());
-        break;
-    }
-    case 5:{
-        auto gp=integrate_multiple(&trig::j5,&trig::c51,&trig::c52,&trig::c53,&trig::c54,&trig::c55,&trig::s51,&trig::s52,&trig::s53,&trig::s54,&trig::s55);
-        result.assign(gp.begin(),gp.end());
-        break;
-    }
-    case 6:{
-        auto gp=integrate_multiple(&trig::j6,&trig::c61,&trig::c62,&trig::c63,&trig::c64,&trig::c65,&trig::c66,&trig::s61,&trig::s62,&trig::s63,&trig::s64,&trig::s65,&trig::s66);
-        result.assign(gp.begin(),gp.end());
-        break;
-    }
-    default:
-        break;
-    }
-    double multiplier=std::pow(ref_radius,double(-d))/volume;
-    for(auto &c:result)
-        c*=multiplier;
     return result;
 }

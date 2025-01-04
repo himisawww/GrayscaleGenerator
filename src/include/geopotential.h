@@ -1,5 +1,7 @@
-#include"triangle.h"
 #include<array>
+#include<vector>
+#include<string>
+#include<map>
 #include"vec_t.h"
 
 //author: himisawww (https://github.com/himisawww)
@@ -11,17 +13,6 @@ typedef vec_t<double> vec;
 class trig{
 public:
     vec p1,p2,p3;
-    trig(const CLTriangle &ctrig){
-        p1.x=ctrig.v[0].x;
-        p1.y=ctrig.v[0].y;
-        p1.z=ctrig.v[0].z;
-        p2.x=ctrig.v[1].x;
-        p2.y=ctrig.v[1].y;
-        p2.z=ctrig.v[1].z;
-        p3.x=ctrig.v[2].x;
-        p3.y=ctrig.v[2].y;
-        p3.z=ctrig.v[2].z;
-    }
 
     //integrator of solid angle
     double solid_angle(const vec &r) const;
@@ -92,20 +83,10 @@ public:
 
     trigmesh():initialized(false){}
 
-    template<typename... Args>
-    auto integrate_multiple(Args... args) const{
-        std::array<double,sizeof...(Args)> result{};
-        for(const auto &t:*this){
-            double *presult=result.data();
-            ((*presult+++=(t.*args)()),...);
-        }
-        return result;
-    }
-
     bool initialize();
-    // 2 <= degree <= 6
-    // return { jn, cn1, cn2, ... cnn, sn1, sn2, ... snn }
-    std::vector<double> integrate_geopotential(int degree) const;
+    // 2 <= max_degree <= 6
+    // return [2<=n<=max_degree]={ jn, cn1, cn2, ... cnn, sn1, sn2, ... snn }
+    std::map<int,std::vector<double>> integrate_geopotential(int max_degree) const;
 
     //solid angle when observed from point r={rx,ry,rz}
     //Note: backward faces contribute negatively; 
@@ -117,6 +98,7 @@ public:
     std::pair<double,vec> gravity(const vec &r) const;
 };
 
-
+//progress utility
+size_t get_remaining_task();
 
 }

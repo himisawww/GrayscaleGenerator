@@ -21,7 +21,13 @@ public:
     bool isMeshLoaded() const;
     int vertexCount() const;
     int faceCount() const;
-    std::string makeGeopotential(bool *is_success, int max_degree=6) const;
+    // this function is non-reenterable, do not call it in parallel.
+    // internal thread pool is controlled by n_thread:
+    // if n_threads == 1, disable thread pool usage;
+    // if n_threads == 0, number of threads is determined automatically;
+    // otherwise size of thread_pool is set to n_threads.
+    // return true when succeed
+    bool makeGeopotential(std::string &result,int max_degree=6,size_t n_thread=0) const;
 
 private:
     std::vector<CLTriangle> triangles;

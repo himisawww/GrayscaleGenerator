@@ -26,6 +26,7 @@ SOURCES += \
     src/image_saver.cpp \
     src/main.cpp \
     src/mesh.cpp \
+    src/threadpool.cpp \
     src/geopotential.cpp \
     src/geopotential_impl.cpp \
     src/mesh_dispatcher.cpp \
@@ -44,6 +45,7 @@ HEADERS += \
     src/include/image_saver.h \
     src/include/kernel.h \
     src/include/mesh.h \
+    src/include/threadpool.h \
     src/include/geopotential.h \
     src/include/mesh_dispatcher.h \
     src/include/opencl.h \
