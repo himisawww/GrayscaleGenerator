@@ -265,14 +265,15 @@ void Widget::onGenerateGeopotentialPushButtonClicked() {
     // Get Filename
     QFileInfo fileInfo(currentMeshFilePath);
     QDir outputDir = fileInfo.absoluteDir();
-    QString outputFileName = outputDir.filePath(
+    QString outputFilePath = outputDir.filePath(
         QFileInfo(currentMeshFileName).baseName()
         + "_geopotential_"
         + timeString
         + ".txt");
+    geopotentialSavePath = outputFilePath;
 
     // Dispatch Geopotential
-    geopotentialDispatcher.setParameter(&mesh, outputFileName.toStdString());
+    geopotentialDispatcher.setParameter(&mesh, outputFilePath.toStdString());
     geopotentialDispatcher.start();
 }
 
@@ -356,7 +357,13 @@ void Widget::handleGeopotentialResult(int result, std::string errorString) {
     ui->progressBar->setMaximum(100);
     ui->progressBar->setValue(100);
     ui->progressBar->setTextVisible(false);
-    ui->statusText->setText("Ready to generate.");
+
+    // Update Status
+    QString statusTextText = "Saved to " + geopotentialSavePath;
+    if (statusTextText.length() > 50) {
+        statusTextText = statusTextText.left(47) + "...";
+    }
+    ui->statusText->setText(statusTextText);
 }
 
 void Widget::startRenderer() {

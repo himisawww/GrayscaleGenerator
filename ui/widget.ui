@@ -7,19 +7,19 @@
     <x>0</x>
     <y>0</y>
     <width>368</width>
-    <height>800</height>
+    <height>730</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>368</width>
-    <height>800</height>
+    <height>730</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>368</width>
-    <height>800</height>
+    <height>730</height>
    </size>
   </property>
   <property name="font">
@@ -37,7 +37,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>772</y>
+     <y>700</y>
      <width>351</width>
      <height>16</height>
     </rect>
@@ -260,7 +260,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>750</y>
+     <y>678</y>
      <width>351</width>
      <height>16</height>
     </rect>
@@ -321,7 +321,7 @@
     <string/>
    </property>
   </widget>
-  <widget class="QPushButton" name="generateGrayscalePushButton">
+  <widget class="PushButton" name="generateGrayscalePushButton">
    <property name="geometry">
     <rect>
      <x>9</x>
@@ -338,7 +338,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>450</y>
+     <y>378</y>
      <width>351</width>
      <height>91</height>
     </rect>
@@ -668,7 +668,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>550</y>
+     <y>478</y>
      <width>351</width>
      <height>191</height>
     </rect>
@@ -854,7 +854,7 @@
     </property>
    </widget>
   </widget>
-  <widget class="QPushButton" name="generateGeopotentialPushButton">
+  <widget class="PushButton" name="generateGeopotentialPushButton">
    <property name="geometry">
     <rect>
      <x>190</x>
@@ -867,40 +867,14 @@
     <string>Calculate Geopotential</string>
    </property>
   </widget>
-  <widget class="QLabel" name="noteLabel">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>365</y>
-     <width>351</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="minimumSize">
-    <size>
-     <width>0</width>
-     <height>0</height>
-    </size>
-   </property>
-   <property name="maximumSize">
-    <size>
-     <width>16777215</width>
-     <height>16777215</height>
-    </size>
-   </property>
-   <property name="font">
-    <font>
-     <family>JetBrains Mono</family>
-    </font>
-   </property>
-   <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: To ensure compatibility with KSP, set the Prime Meridian to 90° and enable X &amp;amp; Y Flip. These settings only affect the grayscale image, geopotential is always aligned with the input model and is irrelevant to these settings.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PushButton</class>
+   <extends>QPushButton</extends>
+   <header>pushbutton.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

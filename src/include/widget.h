@@ -74,6 +74,9 @@ private:
     QString oldVerticesText;
     QString oldFacesText;
 
+    // Variables for handleGeopotentialResult()
+    QString geopotentialSavePath;
+
     // Variables for updateFakeProgress()
     float t;
     float step;
