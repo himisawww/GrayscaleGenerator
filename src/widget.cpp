@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QImage>
+#include <QTime>
 #include <QTimer>
 #include <QDir>
 
@@ -25,19 +26,28 @@ Widget::Widget(QWidget *parent):
     t(0.0f),
     step(0.1f),
     constSpeed(false),
-    ui(new Ui::Widget),
-    renderer(clInterface) {
+    isMinMaxAvailable(false),
+    renderer(clInterface),
+    ui(new Ui::Widget) {
 
+    // Add Font
     QFontDatabase::addApplicationFont(":/font/JetBrainsMono-Regular.ttf");
     ui->setupUi(this);
+
+    // Initialize UI
     ui->selectPushButton->setText("Select (*.obj)");
-    ui->generatePushButton->setEnabled(false);
-    ui->statusLabel->setText("Please select a 3D model.");
+    ui->generateGrayscalePushButton->setEnabled(false);
+    ui->generateGeopotentialPushButton->setEnabled(false);
+    ui->statusText->setText("Please select a 3D model.");
     ui->progressBar->setMinimum(0);
     ui->progressBar->setMaximum(100);
     ui->progressBar->setValue(0);
     ui->progressBar->setTextVisible(false);
 
+    // Disable Deformity Calculator
+    disableDeformityCalculator();
+
+    // Get GPU List
     std::vector<std::string> deviceList = clInterface.getDeviceList();
     ui->renderDeviceComboBox->clear();
     deviceCount = 0;
@@ -49,68 +59,132 @@ Widget::Widget(QWidget *parent):
         ui->renderDeviceComboBox->setCurrentIndex(0);
     }
 
+    // Connect Signals and Slots
     QObject::connect(ui->selectPushButton, &QPushButton::clicked, this, &Widget::onSelectPushButtonClicked);
-    QObject::connect(ui->generatePushButton, &QPushButton::clicked, this, &Widget::onGeneratePushButtonClicked);
+    QObject::connect(ui->imageFormatComboBox, &QComboBox::currentTextChanged, this, &Widget::onImageFormatChanged);
+    QObject::connect(ui->generateGrayscalePushButton, &QPushButton::clicked, this, &Widget::onGenerateGrayscalePushButtonClicked);
+    QObject::connect(ui->generateGeopotentialPushButton, &QPushButton::clicked, this, &Widget::onGenerateGeopotentialPushButtonClicked);
+    QObject::connect(ui->realRadiusDoubleSpinBox, &QDoubleSpinBox::valueChanged, this, &Widget::onRealRadiusValueChanged);
     QObject::connect(&fakeProgressTimer, &QTimer::timeout, this, &Widget::updateFakeProgress);
 }
 
-Widget::~Widget()
-{
+Widget::~Widget() {
     delete ui;
 }
 
-void Widget::closeEvent(QCloseEvent *) {
-    exit(0);
+void Widget::closeEvent(QCloseEvent *event) {
+    if (meshDispatcher.isRunning() ||
+        bvhDispatcher.isRunning() ||
+        renderer.isRunning() ||
+        imageSaver.isRunning() ||
+        geopotentialDispatcher.isRunning()) {
+
+        exit(-1);
+    }
+    else {
+        event->accept();
+    }
 }
 
-void Widget::resetUI(bool enableGeneratePushButton) {
+void Widget::disableUI() {
+    ui->selectPushButton->setEnabled(false);
+    ui->resolutionSpinBox_x->setEnabled(false);
+    ui->resolutionSpinBox_y->setEnabled(false);
+    ui->renderDeviceComboBox->setEnabled(false);
+    ui->imageFormatComboBox->setEnabled(false);
+    ui->colorDepthComboBox->setEnabled(false);
+    ui->xFlipCheckBox->setEnabled(false);
+    ui->yFlipCheckBox->setEnabled(false);
+    ui->primeMeridianDoubleSpinBox->setEnabled(false);
+    ui->isOutputTXTCheckBox->setEnabled(false);
+    ui->generateGrayscalePushButton->setEnabled(false);
+    ui->generateGeopotentialPushButton->setEnabled(false);
+
+    disableDeformityCalculator();
+}
+
+void Widget::enableUI() {
     ui->selectPushButton->setEnabled(true);
     ui->resolutionSpinBox_x->setEnabled(true);
     ui->resolutionSpinBox_y->setEnabled(true);
     ui->renderDeviceComboBox->setEnabled(true);
     ui->imageFormatComboBox->setEnabled(true);
     ui->colorDepthComboBox->setEnabled(true);
-    ui->isOutputTXTCheckbox->setEnabled(true);
+    ui->xFlipCheckBox->setEnabled(true);
+    ui->yFlipCheckBox->setEnabled(true);
+    ui->primeMeridianDoubleSpinBox->setEnabled(true);
+    ui->isOutputTXTCheckBox->setEnabled(true);
+
     if (deviceCount != 0) {
-        ui->generatePushButton->setEnabled(enableGeneratePushButton);
+        ui->generateGrayscalePushButton->setEnabled(mesh.isMeshLoaded());
     }
-    ui->statusLabel->setText("Ready to generate.");
+    ui->generateGeopotentialPushButton->setEnabled(mesh.isMeshLoaded());
+
+    if (isMinMaxAvailable) {
+        enableDeformityCalculator();
+    }
+    else {
+        disableDeformityCalculator();
+    }
 }
 
-void Widget::onSelectPushButtonClicked()
-{
+void Widget::disableDeformityCalculator() {
+    ui->minDistanceText->setText("N/A");
+    ui->maxDistanceText->setText("N/A");
+    ui->deformityText->setText("N/A");
+    ui->realRadiusDoubleSpinBox->setEnabled(false);
+    ui->realDeformityText->setText("N/A");
+    ui->scalingFactorText->setText("N/A");
+}
+
+void Widget::enableDeformityCalculator() {
+    if (isMinMaxAvailable) {
+        double realRadius = ui->realRadiusDoubleSpinBox->value();
+        double scalingFactor = realRadius / min;
+        double realDeformity = max * scalingFactor - realRadius;
+
+        ui->minDistanceText->setText(QString::number(min, 'f', 8));
+        ui->maxDistanceText->setText(QString::number(max, 'f', 8));
+        ui->deformityText->setText(QString::number(max - min, 'f', 8));
+        ui->realRadiusDoubleSpinBox->setEnabled(true);
+        ui->realDeformityText->setText(QString::number(realDeformity, 'f', 8));
+        ui->scalingFactorText->setText(QString::number(scalingFactor, 'f', 8));
+    }
+}
+
+void Widget::onSelectPushButtonClicked() {
     QString filePath = QFileDialog::getOpenFileName(this, "Select 3D Model", QDir::currentPath(), "*.obj");
     if (filePath.isEmpty()) {
         return;
     }
     QFileInfo fileInfo(filePath);
-    meshFileName = fileInfo.fileName();
-    meshFilePath = filePath;
+    tempMeshFileName = fileInfo.fileName();
+    tempMeshFilePath = filePath;
     if (fileInfo.exists()) {
+        // Save Old Text
         oldSelectButtonText = ui->selectPushButton->text();
-        oldStatus = ui->statusLabel->text();
-        oldMetadata = ui->metadataLabel->text();
+        oldStatus = ui->statusText->text();
+        oldVerticesText = ui->verticesText->text();
+        oldFacesText = ui->facesText->text();
 
-        ui->selectPushButton->setEnabled(false);
+        // Disable UI
+        disableUI();
+        disableDeformityCalculator();
         ui->selectPushButton->setText("Loading...");
-        ui->resolutionSpinBox_x->setEnabled(false);
-        ui->resolutionSpinBox_y->setEnabled(false);
-        ui->renderDeviceComboBox->setEnabled(false);
-        ui->imageFormatComboBox->setEnabled(false);
-        ui->colorDepthComboBox->setEnabled(false);
-        ui->isOutputTXTCheckbox->setEnabled(false);
-        ui->generatePushButton->setEnabled(false);
-        ui->metadataLabel->setText("Loading...");
+        ui->verticesText->setText("Loading...");
+        ui->facesText->setText("Loading...");
 
-        QString statusLabelText = "Loading " + filePath;
-        if (statusLabelText.length() > 47) {
-            statusLabelText = statusLabelText.left(47) + "...";
+        // Set Status Text
+        QString statusTextText = "Loading " + filePath;
+        if (statusTextText.length() > 47) {
+            statusTextText = statusTextText.left(47) + "...";
         }
         else {
-            statusLabelText += "...";
+            statusTextText += "...";
         }
-        ui->statusLabel->setText(statusLabelText);
+        ui->statusText->setText(statusTextText);
 
+        // Reset Progress Bar
         fakeProgressTimer.stop();
         ui->progressBar->setMinimum(0);
         ui->progressBar->setMaximum(100);
@@ -134,19 +208,14 @@ void Widget::onSelectPushButtonClicked()
     }
 }
 
-void Widget::onGeneratePushButtonClicked()
-{
-    ui->selectPushButton->setEnabled(false);
-    ui->resolutionSpinBox_x->setEnabled(false);
-    ui->resolutionSpinBox_y->setEnabled(false);
-    ui->renderDeviceComboBox->setEnabled(false);
-    ui->imageFormatComboBox->setEnabled(false);
-    ui->colorDepthComboBox->setEnabled(false);
-    ui->isOutputTXTCheckbox->setEnabled(false);
-    ui->generatePushButton->setEnabled(false);
+void Widget::onGenerateGrayscalePushButtonClicked() {
+    // Disable UI
+    disableUI();
 
-    ui->statusLabel->setText("[1/2] Building BVH...");
+    // Update Status
+    ui->statusText->setText("[1/2] Building BVH...");
 
+    // Restart Timer
     fakeProgressTimer.stop();
     ui->progressBar->setMinimum(0);
     ui->progressBar->setMaximum(100);
@@ -165,11 +234,80 @@ void Widget::onGeneratePushButtonClicked()
                      &Widget::startRenderer,
                      Qt::UniqueConnection);
 
+    // Dispatch BVH
     bvhDispatcher.setParameter(&bvh, &mesh);
     bvhDispatcher.start();
 }
 
+void Widget::onGenerateGeopotentialPushButtonClicked() {
+    // Disable UI
+    disableUI();
+
+    // Update Status
+    ui->statusText->setText("Calculating Geopotential...");
+
+    // Set Progress Bar
+    ui->progressBar->setMinimum(0);
+    ui->progressBar->setMaximum(0);
+    ui->progressBar->setValue(0);
+    ui->progressBar->setTextVisible(false);
+
+    QObject::connect(&geopotentialDispatcher,
+                     &GeopotentialDispatcher::finishedCalculating,
+                     this,
+                     &Widget::handleGeopotentialResult,
+                     Qt::UniqueConnection);
+
+    // Get Current Time
+    QTime currentTime = QTime::currentTime();
+    QString timeString = currentTime.toString("HHmmss").remove(":");
+
+    // Get Filename
+    QFileInfo fileInfo(currentMeshFilePath);
+    QDir outputDir = fileInfo.absoluteDir();
+    QString outputFileName = outputDir.filePath(
+        QFileInfo(currentMeshFileName).baseName()
+        + "_geopotential_"
+        + timeString
+        + ".txt");
+
+    // Dispatch Geopotential
+    geopotentialDispatcher.setParameter(&mesh, outputFileName.toStdString());
+    geopotentialDispatcher.start();
+}
+
+void Widget::onImageFormatChanged(QString currentFormat) {
+    if (currentFormat == "JPG") {
+        ui->colorDepthComboBox->clear();
+        ui->colorDepthComboBox->addItem("8 Bit");
+        ui->colorDepthComboBox->setCurrentIndex(0);
+    }
+    else {
+        if (ui->colorDepthComboBox->count() < 2) {
+            ui->colorDepthComboBox->clear();
+            ui->colorDepthComboBox->addItem("8 Bit");
+            ui->colorDepthComboBox->addItem("16 Bit");
+            ui->colorDepthComboBox->setCurrentIndex(0);
+        }
+    }
+}
+
+void Widget::onRealRadiusValueChanged(double realRadius) {
+    if (isMinMaxAvailable) {
+        double scalingFactor = realRadius / min;
+        double realDeformity = max * scalingFactor - realRadius;
+
+        ui->minDistanceText->setText(QString::number(min, 'f', 8));
+        ui->maxDistanceText->setText(QString::number(max, 'f', 8));
+        ui->deformityText->setText(QString::number(max - min, 'f', 8));
+        ui->realRadiusDoubleSpinBox->setEnabled(true);
+        ui->realDeformityText->setText(QString::number(realDeformity, 'f', 8));
+        ui->scalingFactorText->setText(QString::number(scalingFactor, 'f', 8));
+    }
+}
+
 void Widget::handleMeshLoadingResult(int result) {
+    // Reset Progress Bar
     fakeProgressTimer.stop();
     ui->progressBar->setMinimum(0);
     ui->progressBar->setMaximum(100);
@@ -177,43 +315,52 @@ void Widget::handleMeshLoadingResult(int result) {
     ui->progressBar->setTextVisible(false);
 
     if (result == 0) {
-        QString selectPushButtonText = meshFileName;
+        currentMeshFileName = tempMeshFileName;
+        currentMeshFilePath = tempMeshFilePath;
+
+        QString selectPushButtonText = tempMeshFileName;
         if (selectPushButtonText.length() > 28) {
             selectPushButtonText = selectPushButtonText.left(25) + "...";
         }
         ui->selectPushButton->setText(selectPushButtonText);
-        if (deviceCount != 0) {
-            ui->generatePushButton->setEnabled(true);
-        }
-        ui->metadataLabel->setText("Vertices: "
-                                   + QString::number(mesh.vertexCount())
-                                   + "\n"
-                                   + "Faces: "
-                                   + QString::number(mesh.faceCount()));
-        ui->statusLabel->setText("Ready to generate.");
+        ui->verticesText->setText(QString::number(mesh.vertexCount()));
+        ui->facesText->setText(QString::number(mesh.faceCount()));
+        ui->statusText->setText("Ready to generate.");
+
+        isMinMaxAvailable = false;
     }
     else {
-        QMessageBox::critical(this, "Error", "Error loading " + meshFilePath);
+        QMessageBox::critical(this, "Error", "Error loading " + tempMeshFilePath);
 
         ui->selectPushButton->setText(oldSelectButtonText);
-        if (deviceCount != 0) {
-            ui->generatePushButton->setEnabled(mesh.isMeshLoaded());
-        }
-        ui->metadataLabel->setText(oldMetadata);
-        ui->statusLabel->setText(oldStatus);
+        ui->verticesText->setText(oldVerticesText);
+        ui->facesText->setText(oldFacesText);
+        ui->statusText->setText(oldStatus);
     }
 
-    ui->selectPushButton->setEnabled(true);
-    ui->resolutionSpinBox_x->setEnabled(true);
-    ui->resolutionSpinBox_y->setEnabled(true);
-    ui->renderDeviceComboBox->setEnabled(true);
-    ui->imageFormatComboBox->setEnabled(true);
-    ui->colorDepthComboBox->setEnabled(true);
-    ui->isOutputTXTCheckbox->setEnabled(true);
+    // Enable UI
+    enableUI();
+}
+
+void Widget::handleGeopotentialResult(int result, std::string errorString) {
+    if (result == -1) {
+        QMessageBox::critical(this, "Error", "Geopotential parameters not set.");
+    }
+    else if (result == -2) {
+        QMessageBox::critical(this, "Error", QString::fromStdString(errorString));
+    }
+
+    // Enable UI
+    enableUI();
+    ui->progressBar->setMinimum(0);
+    ui->progressBar->setMaximum(100);
+    ui->progressBar->setValue(100);
+    ui->progressBar->setTextVisible(false);
+    ui->statusText->setText("Ready to generate.");
 }
 
 void Widget::startRenderer() {
-    ui->statusLabel->setText("[2/2] Generating Grayscale Map...");
+    ui->statusText->setText("[2/2] Generating Grayscale Map...");
 
     fakeProgressTimer.stop();
     ui->progressBar->setMinimum(0);
@@ -230,21 +377,24 @@ void Widget::startRenderer() {
         else {
             QMessageBox::critical(this, "Error", "Error compiling OpenCL kernel.");
         }
-        resetUI(true);
+        enableUI();
+        ui->statusText->setText("Ready to generate.");
         return;
     }
 
     result = renderer.setBVHBuffer(bvh.getBVH());
     if (result != 0) {
         QMessageBox::critical(this, "Error", "Error creating OpenCL buffer for BVH.");
-        resetUI(true);
+        enableUI();
+        ui->statusText->setText("Ready to generate.");
         return;
     }
 
     result = renderer.setTriangleBuffer(mesh.getMesh());
     if (result != 0) {
         QMessageBox::critical(this, "Error", "Error creating OpenCL buffer for Triangles.");
-        resetUI(true);
+        enableUI();
+        ui->statusText->setText("Ready to generate.");
         return;
     }
 
@@ -269,21 +419,31 @@ void Widget::handleRenderingResult(int result,
                                    float max) {
     if (result == -1) {
         QMessageBox::critical(this, "Error", "Rendering parameters not set.");
-        resetUI(true);
+        enableUI();
         return;
     }
     if (result == -2) {
         QMessageBox::critical(this, "Error", "Error executing OpenCL kernel.");
-        resetUI(true);
+        enableUI();
         return;
     }
     if (result == -3) {
         QMessageBox::critical(this, "Error", "Error reading OpenCL buffer.");
-        resetUI(true);
+        enableUI();
+        return;
+    }
+    if (min == 0.0f) {
+        QMessageBox::critical(this, "Error", "The model is not watertight.");
+        ui->progressBar->setMinimum(0);
+        ui->progressBar->setMaximum(100);
+        ui->progressBar->setValue(100);
+        ui->progressBar->setTextVisible(false);
+        ui->statusText->setText("Ready to generate.");
+        enableUI();
         return;
     }
 
-    ui->statusLabel->setText("Saving...");
+    ui->statusText->setText("Saving...");
 
     fakeProgressTimer.stop();
     ui->progressBar->setMinimum(0);
@@ -294,10 +454,10 @@ void Widget::handleRenderingResult(int result,
     this->min = min;
     this->max = max;
 
-    QFileInfo fileInfo(meshFilePath);
+    QFileInfo fileInfo(currentMeshFilePath);
     QDir outputDir = fileInfo.absoluteDir();
 
-    QString outputBasename = outputDir.filePath(QFileInfo(meshFileName).baseName()
+    QString outputBaseName = outputDir.filePath(QFileInfo(currentMeshFileName).baseName()
                                                 + "_"
                                                 + QString::number(width)
                                                 + "x"
@@ -311,17 +471,20 @@ void Widget::handleRenderingResult(int result,
         colorDepthSuffix = "16bit";;
     }
 
+    QTime currentTime = QTime::currentTime();
+    QString timeString = currentTime.toString().remove(":");
+
     std::string format = ui->imageFormatComboBox->currentText().toStdString();
     if (format == "PNG") {
-        imageSavePath = outputBasename + "_" + colorDepthSuffix + ".png";
+        imageSavePath = outputBaseName + "_" + colorDepthSuffix + "_" + timeString + ".png";
     }
     else if (format == "JPG") {
-        imageSavePath = outputBasename + "_" + colorDepthSuffix + ".jpg";
+        imageSavePath = outputBaseName + "_" + colorDepthSuffix + "_" + timeString + ".jpg";
     }
     else {
-        imageSavePath = outputBasename + "_" + colorDepthSuffix + ".tiff";
+        imageSavePath = outputBaseName + "_" + colorDepthSuffix + "_" + timeString + ".dds";
     }
-    txtSavePath = outputBasename + ".txt";
+    txtSavePath = outputBaseName + "_" + timeString + ".txt";
 
     QObject::connect(&imageSaver,
                      &ImageSaver::finishedSaving,
@@ -329,7 +492,10 @@ void Widget::handleRenderingResult(int result,
                      &Widget::handleImageSavingResult,
                      Qt::UniqueConnection);
 
-    bool isOutputTXT = ui->isOutputTXTCheckbox->isChecked();
+    bool xFlip = ui->xFlipCheckBox->isChecked();
+    bool yFlip = ui->yFlipCheckBox->isChecked();
+    double primeMeridian = ui->primeMeridianDoubleSpinBox->value();
+    bool isOutputTXT = ui->isOutputTXTCheckBox->isChecked();
     imageSaver.setParameter(imageSavePath.toStdString(),
                             txtSavePath.toStdString(),
                             outputArray,
@@ -339,6 +505,9 @@ void Widget::handleRenderingResult(int result,
                             max,
                             format,
                             colorDepth,
+                            xFlip,
+                            yFlip,
+                            primeMeridian,
                             isOutputTXT);
     imageSaver.start();
 }
@@ -346,37 +515,30 @@ void Widget::handleRenderingResult(int result,
 void Widget::handleImageSavingResult(int result) {
     if (result == -1) {
         QMessageBox::critical(this, "Error", "Image saving parameters not set.");
-        resetUI(true);
+        enableUI();
+        ui->statusText->setText("Ready to generate.");
         return;
     }
     if (result == -2) {
         QMessageBox::critical(this, "Error", "Error saving image to " + imageSavePath + ".");
-        resetUI(true);
+        enableUI();
+        ui->statusText->setText("Ready to generate.");
         return;
     }
     if (result == -3) {
         QMessageBox::critical(this, "Error", "Error saving txt to " + txtSavePath + ".");
-        resetUI(true);
+        enableUI();
+        ui->statusText->setText("Ready to generate.");
         return;
     }
 
-    if (min == 0.0f) {
-        ui->metadataLabel->setText("[Error] The model is not watertight.");
+    isMinMaxAvailable = true;
+    enableUI();
+    QString statusTextText = "Saved to " + imageSavePath;
+    if (statusTextText.length() > 50) {
+        statusTextText = statusTextText.left(47) + "...";
     }
-    else {
-        ui->metadataLabel->setText("Min Distance: "
-                                   + QString::number(min, 'f', 8)
-                                   + "\nMax Distance: "
-                                   + QString::number(max, 'f', 8)
-                                   + "\nDeformity: "
-                                   + QString::number(max - min, 'f', 8));
-    }
-    resetUI(true);
-    QString statusLabelText = "Saved to " + imageSavePath;
-    if (statusLabelText.length() > 50) {
-        statusLabelText = statusLabelText.left(47) + "...";
-    }
-    ui->statusLabel->setText(statusLabelText);
+    ui->statusText->setText(statusTextText);
 }
 
 void Widget::updateFakeProgress() {

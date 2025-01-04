@@ -14,12 +14,14 @@ public:
     Mesh();
 
     int loadMesh(std::string filePath);
-    void setMesh(const std::vector<CLTriangle> &triangles);
-    std::vector<CLTriangle> getMesh() const;
+    void setMesh(std::vector<CLTriangle> &&triangles);
+    void setMesh(std::vector<CLTriangle> &triangles);
+    std::vector<CLTriangle> & getMesh();
+    std::vector<CLTriangle> getMeshCopy() const;
     bool isMeshLoaded() const;
     int vertexCount() const;
     int faceCount() const;
-    std::string makeGeopotential(int max_degree=6) const;
+    std::string makeGeopotential(bool *is_success, int max_degree=6) const;
 
 private:
     std::vector<CLTriangle> triangles;

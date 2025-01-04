@@ -7,19 +7,19 @@
     <x>0</x>
     <y>0</y>
     <width>368</width>
-    <height>450</height>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>368</width>
-    <height>450</height>
+    <height>800</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>368</width>
-    <height>450</height>
+    <height>800</height>
    </size>
   </property>
   <property name="font">
@@ -37,7 +37,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>422</y>
+     <y>772</y>
      <width>351</width>
      <height>16</height>
     </rect>
@@ -150,7 +150,7 @@
     </font>
    </property>
    <property name="minimum">
-    <number>100</number>
+    <number>50</number>
    </property>
    <property name="maximum">
     <number>16384</number>
@@ -174,7 +174,7 @@
     </font>
    </property>
    <property name="minimum">
-    <number>100</number>
+    <number>50</number>
    </property>
    <property name="maximum">
     <number>16384</number>
@@ -256,11 +256,11 @@
     <string>x</string>
    </property>
   </widget>
-  <widget class="QLabel" name="statusLabel">
+  <widget class="QLabel" name="statusText">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>400</y>
+     <y>750</y>
      <width>351</width>
      <height>16</height>
     </rect>
@@ -282,20 +282,20 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>210</y>
+     <y>290</y>
      <width>130</width>
      <height>31</height>
     </rect>
    </property>
    <property name="minimumSize">
     <size>
-     <width>130</width>
+     <width>0</width>
      <height>0</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
-     <width>130</width>
+     <width>16777215</width>
      <height>16777215</height>
     </size>
    </property>
@@ -308,11 +308,11 @@
     <string>Output TXT</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="isOutputTXTCheckbox">
+  <widget class="QCheckBox" name="isOutputTXTCheckBox">
    <property name="geometry">
     <rect>
      <x>150</x>
-     <y>210</y>
+     <y>290</y>
      <width>21</width>
      <height>31</height>
     </rect>
@@ -321,48 +321,87 @@
     <string/>
    </property>
   </widget>
-  <widget class="QPushButton" name="generatePushButton">
+  <widget class="QPushButton" name="generateGrayscalePushButton">
    <property name="geometry">
     <rect>
      <x>9</x>
-     <y>250</y>
-     <width>351</width>
+     <y>330</y>
+     <width>171</width>
      <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>Generate</string>
+    <string>Generate Grayscale</string>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox">
+  <widget class="QGroupBox" name="metadataGroupBox">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>290</y>
+     <y>450</y>
      <width>351</width>
-     <height>101</height>
+     <height>91</height>
     </rect>
    </property>
    <property name="title">
     <string>Metadata</string>
    </property>
-   <widget class="QLabel" name="metadataLabel">
+   <widget class="QLabel" name="verticesLabel">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
-      <width>331</width>
-      <height>81</height>
+      <y>25</y>
+      <width>81</width>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string/>
+     <string>Vertices =</string>
     </property>
-    <property name="alignment">
-     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+   </widget>
+   <widget class="QLabel" name="facesLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>81</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>   Faces =</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="verticesText">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>25</y>
+      <width>251</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>N/A</string>
     </property>
     <property name="textInteractionFlags">
-     <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
+     <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="facesText">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>50</y>
+      <width>251</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>N/A</string>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
     </property>
    </widget>
   </widget>
@@ -422,7 +461,7 @@
    </item>
    <item>
     <property name="text">
-     <string>TIFF</string>
+     <string>DDS</string>
     </property>
    </item>
   </widget>
@@ -480,6 +519,386 @@
      <string>16 Bit</string>
     </property>
    </item>
+  </widget>
+  <widget class="QLabel" name="xFlipLabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>210</y>
+     <width>51</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>16777215</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>JetBrains Mono</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>X Flip</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="yFlipLabel">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>210</y>
+     <width>51</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>16777215</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>JetBrains Mono</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>Y Flip</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="primeMeridianLabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>250</y>
+     <width>130</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>130</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>130</width>
+     <height>16777215</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>JetBrains Mono</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>Prime Meridian</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="xFlipCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>210</y>
+     <width>21</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="yFlipCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>210</y>
+     <width>21</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="primeMeridianDoubleSpinBox">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>250</y>
+     <width>201</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string>°</string>
+   </property>
+   <property name="minimum">
+    <double>-360.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>360.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>90.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="deformityCalculator">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>550</y>
+     <width>351</width>
+     <height>191</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Deformity Calculator</string>
+   </property>
+   <widget class="QLabel" name="minDistanceLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>25</y>
+      <width>121</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>  Min Distance =</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="minDistanceText">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>25</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>N/A</string>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="maxDistanceLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>121</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>  Max Distance =</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="deformityLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>75</y>
+      <width>121</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     Deformity =</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="realRadiusLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>100</y>
+      <width>121</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>   Real Radius =</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="realDeformity">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>125</y>
+      <width>121</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Real Deformity = </string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="scalingFactor">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>150</y>
+      <width>121</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Scaling Factor =</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="maxDistanceText">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>50</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>N/A</string>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="deformityText">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>75</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>N/A</string>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="realDeformityText">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>125</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>N/A</string>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="scalingFactorText">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>150</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>N/A</string>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="realRadiusDoubleSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>98</y>
+      <width>211</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="decimals">
+     <number>8</number>
+    </property>
+    <property name="minimum">
+     <double>0.000000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>10000000000000000000.000000000000000</double>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="generateGeopotentialPushButton">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>330</y>
+     <width>171</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Calculate Geopotential</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="noteLabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>365</y>
+     <width>351</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>16777215</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>JetBrains Mono</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: To ensure compatibility with KSP, set the Prime Meridian to 90° and enable X &amp;amp; Y Flip. These settings only affect the grayscale image, geopotential is always aligned with the input model and is irrelevant to these settings.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
   </widget>
  </widget>
  <resources/>

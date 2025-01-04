@@ -14,6 +14,7 @@
 #include "mesh_dispatcher.h"
 #include "bvh.h"
 #include "bvh_dispatcher.h"
+#include "geopotential_dispatcher.h"
 #include "opencl_interface.h"
 #include "opencl.h"
 #include "renderer.h"
@@ -35,13 +36,17 @@ public:
     ~Widget();
 
 protected:
-    void closeEvent(QCloseEvent *) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void onSelectPushButtonClicked();
-    void onGeneratePushButtonClicked();
+    void onGenerateGrayscalePushButtonClicked();
+    void onGenerateGeopotentialPushButtonClicked();
+    void onImageFormatChanged(QString currentFormat);
+    void onRealRadiusValueChanged(double currentRealRadius);
 
     void handleMeshLoadingResult(int result);
+    void handleGeopotentialResult(int result, std::string errorString);
     void startRenderer();
     void handleRenderingResult(int result,
                                std::shared_ptr<float[]> outputArray,
@@ -55,15 +60,19 @@ private slots:
     void updateFakeProgress();
 
 private:
-    void resetUI(bool enableGeneratePushButton);
+    void disableUI();
+    void enableUI();
+    void disableDeformityCalculator();
+    void enableDeformityCalculator();
 
 private:
     // Variables for handleMeshLoadingResult()
-    QString meshFileName;
-    QString meshFilePath;
+    QString tempMeshFileName;
+    QString tempMeshFilePath;
     QString oldSelectButtonText;
     QString oldStatus;
-    QString oldMetadata;
+    QString oldVerticesText;
+    QString oldFacesText;
 
     // Variables for updateFakeProgress()
     float t;
@@ -74,16 +83,23 @@ private:
     QString imageSavePath, txtSavePath;
     float min, max;
 
-    Ui::Widget *ui;
+    // Member Variables
     Mesh mesh;
     MeshDispatcher meshDispatcher;
     BVH bvh;
     BVHDispatcher bvhDispatcher;
+    GeopotentialDispatcher geopotentialDispatcher;
     OpenCLInterface clInterface;
     QTimer fakeProgressTimer;
     int deviceCount;
+    bool isMinMaxAvailable;
     Renderer renderer;
     ImageSaver imageSaver;
+    QString currentMeshFileName;
+    QString currentMeshFilePath;
+
+    // UI
+    Ui::Widget *ui;
 };
 
 #endif // WIDGET_H

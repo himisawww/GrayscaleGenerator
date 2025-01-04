@@ -56,24 +56,31 @@ static double principia_factor(int n,int m){
     return m==0?-std::sqrt(factor):std::sqrt(factor/2);
 }
 
-std::string Mesh::makeGeopotential(int max_degree) const{
-    if(max_degree<2||6<max_degree)
+std::string Mesh::makeGeopotential(bool *is_success, int max_degree) const{
+    if(max_degree<2||6<max_degree) {
+        *is_success = false;
         return "MaxDegree should be in [2,6]";
+    }
 
     trigmesh gpmesh;
-    for(auto &t:triangles)
+    for(auto &t:triangles) {
         gpmesh.emplace_back(t);
+    }
 
-    if(!gpmesh.initialize())
+    if(!gpmesh.initialize()) {
+        *is_success = false;
         return gpmesh.error_msg;
+    }
 
     std::string result("    reference_radius        = ");
     result+=double_string(gpmesh.ref_radius);
     result+=" km\n";
     for(int n=2;n<=max_degree;++n){
         auto data=gpmesh.integrate_geopotential(n);
-        if(data.size()!=n*2+1)
+        if(data.size()!=n*2+1) {
+            *is_success = false;
             return "Degree not implemented";
+        }
         result+="    geopotential_row {\n";
         result+="      degree = ";
         result+=integer_string(n);
@@ -94,6 +101,7 @@ std::string Mesh::makeGeopotential(int max_degree) const{
         }
         result+="    }\n";
     }
+    *is_success = true;
     return result;
 }
 

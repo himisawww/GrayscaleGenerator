@@ -56,11 +56,19 @@ int Mesh::loadMesh(std::string filePath) {
     return 0;
 }
 
-void Mesh::setMesh(const std::vector<CLTriangle> &triangles) {
+void Mesh::setMesh(std::vector<CLTriangle> &&triangles) {
+    this->triangles = std::move(triangles);
+}
+
+void Mesh::setMesh(std::vector<CLTriangle> &triangles) {
     this->triangles = triangles;
 }
 
-std::vector<CLTriangle> Mesh::getMesh() const {
+std::vector<CLTriangle> & Mesh::getMesh() {
+    return triangles;
+}
+
+std::vector<CLTriangle> Mesh::getMeshCopy() const {
     return triangles;
 }
 

@@ -23,6 +23,9 @@ public:
                       float max,
                       std::string format,
                       int depth,
+                      bool xFlip,
+                      bool yFlip,
+                      double primeMeridian,
                       bool saveTXT);
 
 signals:
@@ -43,6 +46,8 @@ private:
     std::string imageFormat;
     QImage::Format imageColorDepth;
     int colorDepth;
+    bool xFlip, yFlip;
+    double primeMeridian;
     bool saveTXT;
     bool isParameterSet;
 };

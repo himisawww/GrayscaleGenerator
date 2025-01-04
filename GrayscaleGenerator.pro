@@ -21,6 +21,8 @@ SOURCES += \
     src/bvh_dispatcher.cpp \
     src/bound3d.cpp \
     src/bvh.cpp \
+    src/dds.cpp \
+    src/geopotential_dispatcher.cpp \
     src/image_saver.cpp \
     src/main.cpp \
     src/mesh.cpp \
@@ -37,6 +39,8 @@ HEADERS += \
     src/include/bound3d.h \
     src/include/bvh.h \
     src/include/bvh_dispatcher.h \
+    src/include/dds.h \
+    src/include/geopotential_dispatcher.h \
     src/include/image_saver.h \
     src/include/kernel.h \
     src/include/mesh.h \
