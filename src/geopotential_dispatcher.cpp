@@ -18,8 +18,8 @@ void GeopotentialDispatcher::run() {
         return;
     }
 
-    bool isSuccess = false;
-    std::string result = mesh->makeGeopotential(&isSuccess);
+    std::string result;
+    bool isSuccess = mesh->makeGeopotential(result);
     if (!isSuccess) {
         emit finishedCalculating(-2, result);
         return;
