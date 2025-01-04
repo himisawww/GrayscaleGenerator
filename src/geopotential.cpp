@@ -10,7 +10,6 @@ constexpr size_t cn_tasksize=1024;
 static void thread_work(void *param,size_t){
     auto *ptask=(std::function<void()>*)param;
     (*ptask)();
-    delete ptask;
 }
 
 template<typename T,typename U>
@@ -23,7 +22,14 @@ void add_to(T &presult,const T &rhs){
     presult+=rhs;
 }
 
-static std::mutex global_mutex;
+template<typename R>
+class grouped_reducer:public std::function<void()>{
+public:
+    R local_sum{};
+    bool done{false};
+    bool summed{false};
+};
+
 template<typename R,typename F,typename... Args>
 void integrate_parallel(ThreadPool::TaskGroup *pgroup,R *presult,const trigmesh &mesh,F func,Args&&... args){
     auto *pthreadpool=ThreadPool::get_thread_pool();
@@ -32,20 +38,50 @@ void integrate_parallel(ThreadPool::TaskGroup *pgroup,R *presult,const trigmesh 
             add_to(*presult,(t.*func)(std::forward<Args>(args)...));
         return;
     }
-    size_t mesh_size=mesh.size();
-    size_t n_tasks=std::max(size_t(1),(mesh_size+cn_tasksize/2)/cn_tasksize);
+    size_t n_tasks=std::max(size_t(1),(mesh.size()+cn_tasksize/2)/cn_tasksize);
+    typedef grouped_reducer<R> task_type;
+    task_type *all_tasks=new task_type[n_tasks];
+    std::mutex *local_mutex=new std::mutex;
     for(size_t i=0;i<n_tasks;++i){
-        size_t imin=i*mesh_size/n_tasks;
-        size_t imax=(i+1)*mesh_size/n_tasks;
-        pthreadpool->add_task(thread_work,new std::function<void()>([&,imin,imax,func,presult](){
-            R local_sum{};
+        static_cast<std::function<void()>&>(all_tasks[i])=[&,local_mutex,all_tasks,i,n_tasks,func,presult](){
+            size_t mesh_size=mesh.size();
+            size_t imin=i*mesh_size/n_tasks;
+            size_t imax=(i+1)*mesh_size/n_tasks;
+            task_type &this_task=all_tasks[i];
+            R &local_sum=this_task.local_sum;
             for(size_t j=imin;j<imax;++j)
                 add_to(local_sum,(mesh[j].*func)(std::forward<Args>(args)...));
-            global_mutex.lock();
-            add_to(*presult,local_sum);
-            global_mutex.unlock();
-            }),pgroup);
+            bool free_all=false;
+            local_mutex->lock();
+            do{
+                this_task.done=true;
+                if(i+1<n_tasks){
+                    task_type &next_task=all_tasks[i+1];
+                    if(!next_task.summed)break;
+                    add_to(local_sum,next_task.local_sum);
+                }
+                size_t ileft=i;
+                while(ileft){
+                    task_type &previous_task=all_tasks[ileft-1];
+                    if(!previous_task.done)break;
+                    add_to(previous_task.local_sum,all_tasks[ileft].local_sum);
+                    --ileft;
+                }
+                all_tasks[ileft].summed=true;
+                if(ileft==0){
+                    *presult=all_tasks->local_sum;
+                    free_all=true;
+                }
+            } while(0);
+            local_mutex->unlock();
+            if(free_all){
+                delete local_mutex;
+                delete[] all_tasks;
+            }
+        };
     }
+    for(size_t i=0;i<n_tasks;++i)
+        pthreadpool->add_task(thread_work,all_tasks+i,pgroup);
 }
 
 static void integrate_finish(ThreadPool::TaskGroup *pgroup){
@@ -61,8 +97,6 @@ size_t geopotential::get_remaining_task(){
 
 bool trigmesh::initialize(){
     for(int i=0;i<2;++i){
-        volume=0;
-        offset=vec(0);
         ThreadPool::TaskGroup g;
         integrate_parallel(&g,&volume,*this,&trig::m);
         integrate_parallel(&g,&offset.x,*this,&trig::cx);
@@ -191,7 +225,7 @@ double trig::solid_angle(const vec &r) const{
 }
 
 double trigmesh::solid_angle(const vec &r) const{
-    double result=0;
+    double result;
     ThreadPool::TaskGroup g;
     integrate_parallel(&g,&result,*this,&trig::solid_angle,r);
     integrate_finish(&g);
@@ -199,7 +233,7 @@ double trigmesh::solid_angle(const vec &r) const{
 }
 
 std::pair<double,vec> trigmesh::gravity(const vec &r) const{
-    std::pair<double,vec> result(0,0);
+    std::pair<double,vec> result;
     ThreadPool::TaskGroup g;
     integrate_parallel(&g,&result,*this,&trig::gravity,r);
     integrate_finish(&g);
@@ -253,7 +287,7 @@ std::map<int,std::vector<double>> trigmesh::integrate_geopotential(int max_degre
     std::map<int,std::vector<double>> result;
     if(initialized&&max_degree<=6){
         for(int d=2;d<=max_degree;++d)
-            result[d].resize(2*d+1,0);
+            result[d].resize(2*d+1);
         ThreadPool::TaskGroup g;
         double *presult;
         switch(max_degree)
