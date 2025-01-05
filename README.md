@@ -15,7 +15,7 @@ Screenshot:
 Grayscale Generator can generate 16384x8192 grayscale image **in 20s** for a 3D model with 3 million faces.
 
 <p align="center">
-  <img src="picture/example_screenshot.png" alt="Grayscale Generator Screenshot" width="200px" /> <img src="picture/example_blender.png" alt="Blender Screenshot" width="430px" />
+  <img src="picture/example_screenshot.png" alt="Grayscale Generator Screenshot" width="300px" /> <img src="picture/example_blender.png" alt="Blender Screenshot" width="320px" />
 </p>
 
 Result Image:
