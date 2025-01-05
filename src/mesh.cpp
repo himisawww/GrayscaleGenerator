@@ -131,9 +131,9 @@ int Mesh::loadPly(std::string filePath) {
         CLTriangle clTri;
         std::vector<size_t> face = faces[f];
         for (int v = 0; v < 3; v++) {
-            clTri.v[v].x = vertices[face[v]][0];
-            clTri.v[v].y = vertices[face[v]][1];
-            clTri.v[v].z = vertices[face[v]][2];
+            clTri.v[v].x = static_cast<float>(vertices[face[v]][0]);
+            clTri.v[v].y = static_cast<float>(vertices[face[v]][1]);
+            clTri.v[v].z = static_cast<float>(vertices[face[v]][2]);
         }
         newTriangles.push_back(clTri);
     }
