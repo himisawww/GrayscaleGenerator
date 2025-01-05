@@ -35,7 +35,7 @@ Widget::Widget(QWidget *parent):
     ui->setupUi(this);
 
     // Initialize UI
-    ui->selectPushButton->setText("Select (*.obj)");
+    ui->selectPushButton->setText("Select (.obj, .ply, .stl)");
     ui->generateGrayscalePushButton->setEnabled(false);
     ui->generateGeopotentialPushButton->setEnabled(false);
     ui->statusText->setText("Please select a 3D model.");
@@ -153,7 +153,10 @@ void Widget::enableDeformityCalculator() {
 }
 
 void Widget::onSelectPushButtonClicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, "Select 3D Model", QDir::currentPath(), "*.obj");
+    QString filePath = QFileDialog::getOpenFileName(this,
+                                                    "Select 3D Model",
+                                                    QDir::currentPath(),
+                                                    "All files (*.*);;OBJ (*.obj);;PLY (*.ply);;STL (*.stl)");
     if (filePath.isEmpty()) {
         return;
     }

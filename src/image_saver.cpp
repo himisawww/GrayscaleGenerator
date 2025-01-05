@@ -93,7 +93,7 @@ void ImageSaver::run() {
                 int y = j;
 
                 // Prime Meridian
-                x = (x + bias) % imageWidth;
+                x = (x - bias) % imageWidth;
                 x = x < 0 ? x + imageWidth : x;
 
                 // Flip

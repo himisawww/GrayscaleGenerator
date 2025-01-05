@@ -1,3 +1,9 @@
 [submodule "third_party/tinyobjloader"]
 	path = third_party/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader
+[submodule "third_party/happly"]
+	path = third_party/happly
+	url = https://github.com/nmwsharp/happly
+[submodule "third_party/stl_reader"]
+	path = third_party/stl_reader
+	url = https://github.com/sreiter/stl_reader

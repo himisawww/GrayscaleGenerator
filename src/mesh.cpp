@@ -1,5 +1,8 @@
 // mesh.cpp
 
+#include <QString>
+#include <QFileInfo>
+
 #include <string>
 #include <vector>
 
@@ -10,50 +13,25 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobjloader/tiny_obj_loader.h"
 
+#include "happly/happly.h"
+#include "stl_reader/stl_reader.h"
+
 Mesh::Mesh(): isLoaded(false) {}
 
 int Mesh::loadMesh(std::string filePath) {
-    tinyobj::ObjReaderConfig readerConfig;
-    readerConfig.triangulate = true;
-
-    tinyobj::ObjReader reader;
-
-    if (!reader.ParseFromFile(filePath, readerConfig)) {
-        return -1;
+    QFileInfo fileInfo(QString::fromStdString(filePath));
+    QString suffix = fileInfo.suffix().toLower();
+    int result = -1;
+    if (suffix == "obj") {
+        result = loadObj(filePath);
     }
-
-    auto& attrib = reader.GetAttrib();
-    auto& shapes = reader.GetShapes();
-
-    if (shapes.size() == 0) {
-        return -1;
+    else if (suffix == "ply") {
+        result = loadPly(filePath);
     }
-
-    std::vector<CLTriangle> new_triangles;
-
-    for (auto shape : shapes) {
-        size_t offset = 0;
-        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
-            CLTriangle tri;
-            for (size_t v = 0; v < 3; v++) {
-                tinyobj::index_t index = shape.mesh.indices[offset + v];
-                float vx = static_cast<float>(attrib.vertices[3 * size_t(index.vertex_index) + 0]);
-                float vy = static_cast<float>(attrib.vertices[3 * size_t(index.vertex_index) + 1]);
-                float vz = static_cast<float>(attrib.vertices[3 * size_t(index.vertex_index) + 2]);
-                tri.v[v] = Vector3D(vx, -vz, vy).serialize();
-            }
-            new_triangles.push_back(tri);
-            offset += 3;
-        }
+    else if (suffix == "stl") {
+        result = loadStl(filePath);
     }
-
-    if (new_triangles.size() == 0) {
-        return -1;
-    }
-
-    triangles = new_triangles;
-    isLoaded = true;
-    return 0;
+    return result;
 }
 
 void Mesh::setMesh(std::vector<CLTriangle> &&triangles) {
@@ -87,5 +65,113 @@ int Mesh::faceCount() const {
     if (isLoaded) {
         return static_cast<int>(triangles.size());
     }
+    return 0;
+}
+
+int Mesh::loadObj(std::string filePath) {
+    tinyobj::ObjReaderConfig readerConfig;
+    readerConfig.triangulate = true;
+
+    tinyobj::ObjReader reader;
+
+    if (!reader.ParseFromFile(filePath, readerConfig)) {
+        return -1;
+    }
+
+    auto& attrib = reader.GetAttrib();
+    auto& shapes = reader.GetShapes();
+
+    if (shapes.size() == 0) {
+        return -1;
+    }
+
+    std::vector<CLTriangle> newTriangles;
+
+    for (auto shape : shapes) {
+        size_t offset = 0;
+        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+            CLTriangle clTri;
+            for (size_t v = 0; v < 3; v++) {
+                tinyobj::index_t index = shape.mesh.indices[offset + v];
+                float vx = static_cast<float>(attrib.vertices[3 * size_t(index.vertex_index) + 0]);
+                float vy = static_cast<float>(attrib.vertices[3 * size_t(index.vertex_index) + 1]);
+                float vz = static_cast<float>(attrib.vertices[3 * size_t(index.vertex_index) + 2]);
+                clTri.v[v] = Vector3D(vx, -vz, vy).serialize();
+            }
+            newTriangles.push_back(clTri);
+            offset += 3;
+        }
+    }
+
+    if (newTriangles.size() == 0) {
+        return -1;
+    }
+
+    std::swap(triangles, newTriangles);
+    isLoaded = true;
+    return 0;
+}
+
+int Mesh::loadPly(std::string filePath) {
+    std::vector<std::array<double, 3>> vertices;
+    std::vector<std::vector<size_t>> faces;
+    std::vector<CLTriangle> newTriangles;
+
+    try {
+        happly::PLYData plyMesh(filePath);
+        plyMesh.validate();
+        vertices = plyMesh.getVertexPositions();
+        faces = plyMesh.getFaceIndices<size_t>();
+    }
+    catch (std::exception) {
+        return -1;
+    }
+
+    for (size_t f = 0; f < faces.size(); f++) {
+        CLTriangle clTri;
+        std::vector<size_t> face = faces[f];
+        for (int v = 0; v < 3; v++) {
+            clTri.v[v].x = vertices[face[v]][0];
+            clTri.v[v].y = vertices[face[v]][1];
+            clTri.v[v].z = vertices[face[v]][2];
+        }
+        newTriangles.push_back(clTri);
+    }
+
+    if (newTriangles.size() == 0) {
+        return -1;
+    }
+
+    std::swap(triangles, newTriangles);
+    isLoaded = true;
+    return 0;
+}
+
+int Mesh::loadStl(std::string filePath) {
+    std::vector<CLTriangle> newTriangles;
+
+    try {
+        stl_reader::StlMesh<float, unsigned int> mesh(filePath);
+        for (size_t f = 0; f < mesh.num_tris(); f++) {
+            CLTriangle clTri;
+            for (int v = 0; v < 3; v++) {
+                const float *vertex = mesh.tri_corner_coords(f, v);
+                clTri.v[v].x = vertex[0];
+                clTri.v[v].y = vertex[1];
+                clTri.v[v].z = vertex[2];
+            }
+            newTriangles.push_back(clTri);
+        }
+    }
+    catch (std::exception) {
+        return -1;
+    }
+
+    if (newTriangles.size() == 0) {
+        return -1;
+    }
+
+    std::swap(triangles, newTriangles);
+    isLoaded = true;
     return 0;
 }

@@ -58,7 +58,9 @@ HEADERS += \
     src/include/vec_t.h \
     src/include/widget.h \
     third_party/OpenCL/include/CL/opencl.hpp \
-    third_party/tinyobjloader/tiny_obj_loader.h
+    third_party/tinyobjloader/tiny_obj_loader.h \
+    third_party/happly/happly.h \
+    third_party/stl_reader/stl_reader.h
 
 FORMS += \
     ui/widget.ui
