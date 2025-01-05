@@ -12,10 +12,10 @@ Screenshot:
 </p>
 
 ## Example
-Grayscale Generator can generate 16384x8192 grayscale image **in 30s** for a 3D model with 3 million faces.
+Grayscale Generator can generate 16384x8192 grayscale image **in 20s** for a 3D model with 3 million faces.
 
 <p align="center">
-  <img src="picture/example_screenshot.png" alt="Grayscale Generator Screenshot" width="300px" /> <img src="picture/example_blender.png" alt="Blender Screenshot" width="645px" />
+  <img src="picture/example_screenshot.png" alt="Grayscale Generator Screenshot" width="200px" /> <img src="picture/example_blender.png" alt="Blender Screenshot" width="430px" />
 </p>
 
 Result Image:
@@ -42,3 +42,8 @@ Result Image:
 - Y Flip: Flip the image vertically.
 - Prime Meridian: When generating a grayscale image, a spherical coordinate system is created at the world origin. The azimuth angle is mapped to the x axis of the image, and the pitch angle is mapped to the y axis of the image. The prime meridian refers to the starting direction of the azimuth angle. Specifically, prime meridian 0 corresponds to the positive x axis of the world coordinate system. Changing the prime meridian will change the starting direction of the azimuth angle of the spherical coordinate system, thus changing the horizontal offset of the resulting image.
 - Output TXT: Check this if you want to get the raw data of distance. Note that the data is stored in column-major order.
+
+## Build Instruction
+1. Download Qt 6.7.3
+2. Open GrayscaleGenerator.pro
+3. Build
