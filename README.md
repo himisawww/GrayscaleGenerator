@@ -31,7 +31,8 @@ Result Image:
 ## Caution
 1. The model has to be watertight.
 2. Make sure the world origin is inside the model. The intersection rays will emit from the world origin.
-3. To ensure compatibility with KSP, set the `Prime Meridian` to 90° and enable X & Y Flip. These settings only affect the grayscale image, geopotential is always aligned with the input model and is irrelevant to these settings.
+3. Only supports triangles and quads in `ply`, N-Gons are not supported.
+4. To ensure compatibility with KSP, set the `Prime Meridian` to 90° and enable X & Y Flip. These settings only affect the grayscale image, geopotential is always aligned with the input model and is irrelevant to these settings.
 
 ## Parameter Explanation
 - Output Resolution: The resolution of the output image.
