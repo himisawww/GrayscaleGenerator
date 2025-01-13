@@ -128,14 +128,37 @@ int Mesh::loadPly(std::string filePath) {
     }
 
     for (size_t f = 0; f < faces.size(); f++) {
-        CLTriangle clTri;
         std::vector<size_t> face = faces[f];
-        for (int v = 0; v < 3; v++) {
-            clTri.v[v].x = static_cast<float>(vertices[face[v]][0]);
-            clTri.v[v].y = static_cast<float>(vertices[face[v]][1]);
-            clTri.v[v].z = static_cast<float>(vertices[face[v]][2]);
+        int vertexCount = static_cast<int>(face.size());
+        if (vertexCount < 3 || vertexCount > 4) {
+            return -2;
         }
-        newTriangles.push_back(clTri);
+        if (vertexCount == 4) {
+            CLTriangle clTri1, clTri2;
+            for (int v = 0, i = 0; v < 3; v++) {
+                clTri1.v[v].x = static_cast<float>(vertices[face[i]][0]);
+                clTri1.v[v].y = static_cast<float>(vertices[face[i]][1]);
+                clTri1.v[v].z = static_cast<float>(vertices[face[i]][2]);
+                i = (i + 1) % 4;
+            }
+            for (int v = 0, i = 2; v < 3; v++) {
+                clTri2.v[v].x = static_cast<float>(vertices[face[i]][0]);
+                clTri2.v[v].y = static_cast<float>(vertices[face[i]][1]);
+                clTri2.v[v].z = static_cast<float>(vertices[face[i]][2]);
+                i = (i + 1) % 4;
+            }
+            newTriangles.push_back(clTri1);
+            newTriangles.push_back(clTri2);
+        }
+        else {
+            CLTriangle clTri;
+            for (int v = 0; v < 3; v++) {
+                clTri.v[v].x = static_cast<float>(vertices[face[v]][0]);
+                clTri.v[v].y = static_cast<float>(vertices[face[v]][1]);
+                clTri.v[v].z = static_cast<float>(vertices[face[v]][2]);
+            }
+            newTriangles.push_back(clTri);
+        }
     }
 
     if (newTriangles.size() == 0) {

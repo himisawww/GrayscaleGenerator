@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "triangle.h"
+#include "vector3d.h"
 
 class Mesh
 {

@@ -333,6 +333,14 @@ void Widget::handleMeshLoadingResult(int result) {
 
         isMinMaxAvailable = false;
     }
+    else if (result == -2) {
+        QMessageBox::critical(this, "Error", "Mesh contains incomplete faces or N-Gons.");
+
+        ui->selectPushButton->setText(oldSelectButtonText);
+        ui->verticesText->setText(oldVerticesText);
+        ui->facesText->setText(oldFacesText);
+        ui->statusText->setText(oldStatus);
+    }
     else {
         QMessageBox::critical(this, "Error", "Error loading " + tempMeshFilePath);
 
