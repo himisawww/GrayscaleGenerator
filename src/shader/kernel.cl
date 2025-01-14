@@ -37,10 +37,10 @@ __kernel void RenderKernel(__global const BVHNode *bvhNodes,
                 float h_rand = h + dh * Random11(&random) * 0.05f;
                 float v_rand = v + dv * Random11(&random) * 0.05f;
 
-                Ray ray = RayInit((float3){0.0f, 0.0f, 0.0f},
-                                normalize((float3){cos(v_rand) * cos(h_rand), cos(v_rand) * sin(h_rand), sin(v_rand)}),
-                                0.0f,
-                                INFINITY);
+                ray = RayInit((float3){0.0f, 0.0f, 0.0f},
+                              normalize((float3){cos(v_rand) * cos(h_rand), cos(v_rand) * sin(h_rand), sin(v_rand)}),
+                              0.0f,
+                              INFINITY);
 
                 isect = BVHIntersect(bvhNodes, bvhNodeCount, triangles, ray);
                 if (isect.isHit) {
