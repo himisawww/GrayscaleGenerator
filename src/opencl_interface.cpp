@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "opencl_interface.h"
 #include "opencl.h"
@@ -29,6 +30,18 @@ int OpenCLInterface::init(std::string deviceName) {
 
     if (!deviceFound) {
         return -1;
+    }
+
+    std::smatch match;
+    std::string version = globalOpenCLDevice.getInfo<CL_DEVICE_VERSION>();
+    if (std::regex_search(version, match, std::regex("OpenCL (\\d+)\\..+"))) {
+        std::string matchString = match[1].str();
+        if (std::atoi(matchString.c_str()) < 2) {
+            return -3;
+        }
+    }
+    else {
+        return -3;
     }
 
     globalOpenCLContext = cl::Context(globalOpenCLDevice, nullptr, nullptr, nullptr, &errorCode);

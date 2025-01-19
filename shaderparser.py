@@ -50,16 +50,24 @@ def main():
 
     file = open(outputPath, "w")
     included.append(kernelPath)
+
     kernel = parse(kernelPath)
     kernel = kernel.replace("\\", "\\\\")
     kernel = kernel.replace("\"", "\\\"")
     kernel = kernel.replace("\'", "\\\'")
-    kernel = kernel.replace("\r\n", "\\r")
-    kernel = kernel.replace("\n", "\\n")
-    prefix = "// kernel.h\n\n#ifndef __KERNEL__\n#define __KERNEL__\n\n#include <string>\n\n"
-    kernel = "const std::string KernelString = " + "\"" + kernel + "\";"
+    kernel = kernel.replace("\r\n", "\n")
+
+    prefix = "// kernel.h\n\n#ifndef __KERNEL__\n#define __KERNEL__\n\n#include <string>\n\nconst std::string KernelString = \n"
+
+    kernelString = ""
+    lines = kernel.split('\n')
+    for line in lines:
+        kernelString += "    \"" + line + "\\n\"\n"
+    kernelString = kernelString[:-1] + ";"
+
     suffix = "\n\n#endif // __KERNEL__"
-    file.write(prefix + kernel + suffix)
+
+    file.write(prefix + kernelString + suffix)
     print("Successfully generated " + outputPath + ".")
     file.close()
 

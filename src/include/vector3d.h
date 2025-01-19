@@ -21,10 +21,10 @@ public:
     Vector3D operator+(Vector3D v);
     Vector3D operator-(Vector3D v);
     Vector3D operator-();
-    float   operator*(Vector3D v);
+    Vector3D operator*(Vector3D v);
     Vector3D operator*(float n);
     Vector3D operator/(float n);
-    float   operator[](int i);
+    float    operator[](int i);
 
     Vector3D & operator+=(Vector3D v);
     Vector3D & operator-=(Vector3D v);

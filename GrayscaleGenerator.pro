@@ -21,7 +21,7 @@ SOURCES += \
     src/bvh_dispatcher.cpp \
     src/bound3d.cpp \
     src/bvh.cpp \
-    src/dds.cpp \
+    src/dds_image.cpp \
     src/geopotential_dispatcher.cpp \
     src/image_saver.cpp \
     src/main.cpp \
@@ -34,6 +34,7 @@ SOURCES += \
     src/opencl_interface.cpp \
     src/renderer.cpp \
     src/triangle.cpp \
+    src/vector2d.cpp \
     src/vector3d.cpp \
     src/widget.cpp
 
@@ -41,7 +42,7 @@ HEADERS += \
     src/include/bound3d.h \
     src/include/bvh.h \
     src/include/bvh_dispatcher.h \
-    src/include/dds.h \
+    src/include/dds_image.h \
     src/include/geopotential_dispatcher.h \
     src/include/image_saver.h \
     src/include/kernel.h \
@@ -54,6 +55,7 @@ HEADERS += \
     src/include/opencl_interface.h \
     src/include/renderer.h \
     src/include/triangle.h \
+    src/include/vector2d.h \
     src/include/vector3d.h \
     src/include/vec_t.h \
     src/include/widget.h \

@@ -19,11 +19,15 @@ public:
     Renderer(OpenCLInterface &clInterface);
     int setBVHBuffer(const std::vector<CLBVHNode> &bvhNodes);
     int setTriangleBuffer(const std::vector<CLTriangle> &triangles);
-    void setParameter(int width, int height);
+    int setColorMapBuffer(std::shared_ptr<unsigned char[]> colorMapArray, int width, int height);
+    int setNormalMapBuffer(std::shared_ptr<unsigned char[]> normalMapArray, int width, int height);
+    void setParameter(int width, int height, int sampleNum, bool isRenderColorMap, bool isRenderNormalMap);
 
 signals:
     void finishedRender(int result,
-                        std::shared_ptr<float[]> outputArray,
+                        std::shared_ptr<float[]> outputGrayscaleMapArray,
+                        std::shared_ptr<unsigned char[]> outputColorMapArray,
+                        std::shared_ptr<unsigned char[]> outputNormalMapArray,
                         int width,
                         int height,
                         float min,
@@ -33,13 +37,23 @@ protected:
     void run() override;
 
 private:
+    void returnError(int result);
+
+private:
     OpenCLInterface &clInterface;
 
     cl::Buffer bvhBuffer, triangleBuffer;
     int bvhBufferSize, triangleBufferSize;
-    bool isBVHBufferSet, isTriangleBufferSet;
 
-    int width, height;
+    cl::Image2D colorMapImage, normalMapImage;
+    int colorMapMipMapLevel, normalMapMipMapLevel;
+    int colorMapWidth, colorMapHeight, normalMapWidth, normalMapHeight;
+
+    bool isBVHBufferSet, isTriangleBufferSet;
+    bool isColorMapSet, isNormalMapSet;
+    bool isRenderColorMap, isRenderNormalMap;
+
+    int width, height, sampleNum;
     bool isParameterSet;
 };
 

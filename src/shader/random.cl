@@ -30,7 +30,7 @@ uint RandomUint(Random *random) {
 }
 
 float Random01(Random *random) {
-    return (float) (RandomUint(random) - (uint) 1) / (float) (LCG_M - (uint) 1);
+    return (float)(RandomUint(random) - (uint)1) / (float)(LCG_M - (uint)1);
 }
 
 float Random11(Random *random) {

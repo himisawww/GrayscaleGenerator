@@ -20,9 +20,9 @@ BVHNode BVHNode::InitInterior(Bound3D bound,
                               int secondChildIndex,
                               int splitAxis) {
     BVHNode node = {
+        .bound = bound,
         .index = secondChildIndex,
-        .splitAxis = splitAxis,
-        .bound = bound
+        .splitAxis = splitAxis
     };
     return node;
 }
@@ -30,27 +30,27 @@ BVHNode BVHNode::InitInterior(Bound3D bound,
 BVHNode BVHNode::InitLeaf(Bound3D bound,
                           int triangleIndex) {
     BVHNode node = {
+        .bound = bound,
         .index = triangleIndex,
-        .splitAxis = -1,
-        .bound = bound
+        .splitAxis = -1
     };
     return node;
 }
 
 CLBVHNode BVHNode::serialize() {
     CLBVHNode clNode = {
+        .bound = bound.serialize(),
         .index = index,
-        .splitAxis = splitAxis,
-        .bound = bound.serialize()
+        .splitAxis = splitAxis
     };
     return clNode;
 }
 
 BVHNode BVHNode::deserialize(CLBVHNode clNode) {
     BVHNode node = {
+        .bound = Bound3D::deserialize(clNode.bound),
         .index = clNode.index,
-        .splitAxis = clNode.splitAxis,
-        .bound = Bound3D::deserialize(clNode.bound)
+        .splitAxis = clNode.splitAxis
     };
     return node;
 }

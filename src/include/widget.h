@@ -39,17 +39,25 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
-    void onSelectPushButtonClicked();
+    void onSelect3DModelPushButtonClicked();
     void onGenerateGrayscalePushButtonClicked();
     void onGenerateGeopotentialPushButtonClicked();
     void onImageFormatChanged(QString currentFormat);
+    void onSamplerCheckBoxClicked(bool isChecked);
+    void onSamplerChanged(int currentIndex);
+    void onColorMapCheckBoxClicked(bool isChecked);
+    void onSelectColorMapPushButtonClicked();
+    void onNormalMapCheckBoxClicked(bool isChecked);
+    void onSelectNormalMapPushButtonClicked();
     void onRealRadiusValueChanged(double currentRealRadius);
 
     void handleMeshLoadingResult(int result);
     void handleGeopotentialResult(int result, std::string errorString);
     void startRenderer();
     void handleRenderingResult(int result,
-                               std::shared_ptr<float[]> outputArray,
+                               std::shared_ptr<float[]> outputGrayscaleMapArray,
+                               std::shared_ptr<unsigned char[]> outputColorMapArray,
+                               std::shared_ptr<unsigned char[]> outputNormalMapArray,
                                int width,
                                int height,
                                float min,
@@ -62,8 +70,10 @@ private slots:
 private:
     void disableUI();
     void enableUI();
+    void setProgressBar(bool enable, int percent = 0);
     void disableDeformityCalculator();
     void enableDeformityCalculator();
+    void errorMessageBox(const QString &title, const QString &text);
 
 private:
     // Variables for handleMeshLoadingResult()
@@ -83,7 +93,9 @@ private:
     bool constSpeed;
 
     // Variables for handleImageSavingResult()
-    QString imageSavePath, txtSavePath;
+    QString grayscaleMapSavePath;
+    QString colorMapSavePath, normalMapSavePath;
+    QString txtSavePath;
     float min, max;
 
     // Member Variables
@@ -95,11 +107,22 @@ private:
     OpenCLInterface clInterface;
     QTimer fakeProgressTimer;
     int deviceCount;
+    int sampleNum;
     bool isMinMaxAvailable;
+    bool isColorMapLoaded;
+    bool isNormalMapLoaded;
     Renderer renderer;
     ImageSaver imageSaver;
     QString currentMeshFileName;
     QString currentMeshFilePath;
+    QString currentColorMapFileName;
+    QString currentColorMapFilePath;
+    QString currentNormalMapFileName;
+    QString currentNormalMapFilePath;
+    std::shared_ptr<unsigned char[]> colorMapArray;
+    int colorMapWidth, colorMapHeight;
+    std::shared_ptr<unsigned char[]> normalMapArray;
+    int normalMapWidth, normalMapHeight;
 
     // UI
     Ui::Widget *ui;

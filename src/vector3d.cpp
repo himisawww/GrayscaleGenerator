@@ -34,8 +34,8 @@ Vector3D Vector3D::operator-() {
     return Vector3D(-x, -y, -z);
 }
 
-float Vector3D::operator*(Vector3D v) {
-    return x * v.x + y * v.y + z * v.z;
+Vector3D Vector3D::operator*(Vector3D v) {
+    return Vector3D(x * v.x, y * v.y, z * v.z);
 }
 
 Vector3D Vector3D::operator*(float n)  {

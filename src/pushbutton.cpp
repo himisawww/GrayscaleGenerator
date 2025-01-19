@@ -6,7 +6,7 @@ PushButton::PushButton(QWidget *parent)
     : QPushButton(parent) {
     setToolTip("Note: To ensure compatibility with KSP, set the" "\n"
                "Prime Meridian to 90° and enable X & Y Flip. " "\n"
-               "These settings only affect the grayscale image," "\n"
+               "These settings only affect the generated images," "\n"
                "geopotential is always aligned with the input" "\n"
                "model and is irrelevant to these settings.");
 }

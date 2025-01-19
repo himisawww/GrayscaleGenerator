@@ -169,9 +169,9 @@ bool Mesh::makeGeopotential(std::string &result,int max_degree,size_t n_thread) 
     trigmesh gpmesh;
     for(const auto &t:triangles)
         gpmesh.emplace_back(
-            vec(t.v[0].x,t.v[0].y,t.v[0].z),
-            vec(t.v[1].x,t.v[1].y,t.v[1].z),
-            vec(t.v[2].x,t.v[2].y,t.v[2].z));
+            vec(t.p[0].x,t.p[0].y,t.p[0].z),
+            vec(t.p[1].x,t.p[1].y,t.p[1].z),
+            vec(t.p[2].x,t.p[2].y,t.p[2].z));
 
     if(!gpmesh.initialize()){
         result=gpmesh.error_msg;

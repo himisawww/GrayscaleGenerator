@@ -20,6 +20,7 @@ public:
     std::vector<CLTriangle> & getMesh();
     std::vector<CLTriangle> getMeshCopy() const;
     bool isMeshLoaded() const;
+    bool hasUVCoord() const;
     int vertexCount() const;
     int faceCount() const;
 
@@ -37,7 +38,7 @@ private:
     int loadStl(std::string filePath);
 
     std::vector<CLTriangle> triangles;
-    bool isLoaded;
+    bool isLoaded, hasUV;
 };
 
 #endif // MESH_H

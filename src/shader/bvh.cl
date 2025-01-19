@@ -10,6 +10,8 @@
 #include "bool3.cl"
 
 typedef struct BVHNode {
+    Bound3D bound;
+
     // Second Child Index for Interior Node
     // Triangle Index fot Leaf Node
     int index;
@@ -17,7 +19,7 @@ typedef struct BVHNode {
     // -1 for Leaf Node
     int splitAxis;
 
-    Bound3D bound;
+    char padding[8];
 } BVHNode;
 
 __constant int maxBVHDepth = 32;

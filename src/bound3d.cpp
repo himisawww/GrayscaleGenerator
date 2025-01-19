@@ -50,7 +50,7 @@ Bound3D Bound3D::Union(Vector3D p)
 Bound3D Bound3D::Union(Triangle tri) {
     Bound3D bound = *this;
     for (int i = 0; i < 3; i++) {
-        bound = bound.Union(tri.v[i]);
+        bound = bound.Union(tri.p[i]);
     }
     return bound;
 }

@@ -8,8 +8,11 @@
 #include "bound3d.h"
 #include "mesh.h"
 
+// Plain Old Data
 struct CLBVHNode
 {
+    CLBound3D bound;
+
     // Second Child Index for Interior Node
     // Triangle Index fot Leaf Node
     cl_int index;
@@ -18,8 +21,6 @@ struct CLBVHNode
     cl_int splitAxis;
 
     char padding[8];
-
-    CLBound3D bound;
 };
 
 struct BVHNode
@@ -30,14 +31,14 @@ struct BVHNode
     CLBVHNode serialize();
     static BVHNode deserialize(CLBVHNode clNode);
 
+    Bound3D bound;
+
     // Second Child Index for Interior Node
     // Triangle Index for Leaf Node
     int index;
 
     // -1 for Leaf Node
     int splitAxis;
-
-    Bound3D bound;
 };
 
 class BVH
