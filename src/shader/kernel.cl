@@ -104,9 +104,9 @@ __kernel void RenderKernel(__global const BVHNode *bvhNodes,
             }
             tHit = sampleCount == 0 ? 0.0f : (tHitSample / sampleCount);
 
-            normalMapValue = sampleCount == 0
-                             ? (uchar4){0, 0, 0, 255}
-                             : (uchar4){convert_uchar3(colorMapSample / sampleCount), 255};
+            colorMapValue = sampleCount == 0
+                            ? (uchar4){0, 0, 0, 255}
+                            : (uchar4){convert_uchar3(colorMapSample / sampleCount), 255};
 
             normalMapValue = sampleCount == 0
                              ? (uchar4){0, 0, 0, 255}
@@ -178,12 +178,12 @@ __kernel void FilterKernel(__global const float *inputBuffer,
 
             outputBuffer[index] = count == 0 ? 0.0f : (pixelSample / count);
 
-            if (inputColorMapBuffer) {
+            if (outputColorMapBuffer) {
                 outputColorMapBuffer[index] = count == 0
                                               ? (uchar4){0, 0, 0, 255}
                                               : (uchar4){convert_uchar3(colorMapSample / count), 255};
             }
-            if (inputNormalMapBuffer) {
+            if (outputNormalMapBuffer) {
                 outputNormalMapBuffer[index] = count == 0
                                                ? (uchar4){0, 0, 0, 255}
                                                : (uchar4){convert_uchar3(normalMapSample / count), 255};

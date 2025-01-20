@@ -15,23 +15,24 @@
 
 ImageSaver::ImageSaver(QObject *parent): QThread(parent), isParameterSet(false) {}
 
-void ImageSaver::setParameter(std::string grayscaleMapSavePath,
-                              std::string colorMapSavePath,
-                              std::string normalMapSavePath,
-                              std::string txtSavePath,
-                              std::shared_ptr<float[]> grayscaleMapArray,
-                              std::shared_ptr<unsigned char[]> colorMapArray,
-                              std::shared_ptr<unsigned char[]> normalMapArray,
-                              int width,
-                              int height,
-                              float min,
-                              float max,
-                              std::string format,
-                              int depth,
-                              bool xFlip,
-                              bool yFlip,
-                              double primeMeridian,
-                              bool saveTXT) {
+void ImageSaver::setParameter(
+    std::string grayscaleMapSavePath,
+    std::string colorMapSavePath,
+    std::string normalMapSavePath,
+    std::string txtSavePath,
+    std::shared_ptr<float[]> grayscaleMapArray,
+    std::shared_ptr<unsigned char[]> colorMapArray,
+    std::shared_ptr<unsigned char[]> normalMapArray,
+    int width,
+    int height,
+    float min,
+    float max,
+    std::string format,
+    int depth,
+    bool xFlip,
+    bool yFlip,
+    double primeMeridian,
+    bool saveTXT) {
 
     this->grayscaleMapSavePath = grayscaleMapSavePath;
     this->colorMapSavePath = colorMapSavePath;

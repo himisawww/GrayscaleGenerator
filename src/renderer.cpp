@@ -16,9 +16,9 @@ Renderer::Renderer(OpenCLInterface &clInterface):
     isTriangleBufferSet(false),
     isColorMapSet(false),
     isNormalMapSet(false),
-    isParameterSet(false),
     isRenderColorMap(false),
-    isRenderNormalMap(false) {}
+    isRenderNormalMap(false),
+    isParameterSet(false) {}
 
 int Renderer::setBVHBuffer(const std::vector<CLBVHNode> &bvhNodes) {
     cl_int errorCode = CL_SUCCESS;
@@ -117,7 +117,7 @@ void Renderer::run() {
         return;
     }
 
-    if (!isColorMapSet || !isRenderColorMap) {
+    if (!(isColorMapSet && isRenderColorMap)) {
         colorMapImage = cl::Image2D(clInterface.getContext(),
                                     CL_MEM_READ_ONLY,
                                     cl::ImageFormat(CL_RGBA, CL_UNSIGNED_INT8),
@@ -133,7 +133,7 @@ void Renderer::run() {
         }
     }
 
-    if (!isNormalMapSet || !isRenderNormalMap) {
+    if (!(isNormalMapSet && isRenderNormalMap)) {
         normalMapImage = cl::Image2D(clInterface.getContext(),
                                      CL_MEM_READ_ONLY,
                                      cl::ImageFormat(CL_RGBA, CL_UNSIGNED_INT8),
@@ -151,10 +151,10 @@ void Renderer::run() {
 
     // Dispatch Render Kernel
     cl::Buffer grayscaleMapBuffer = cl::Buffer(clInterface.getContext(),
-                                        CL_MEM_READ_WRITE,
-                                        sizeof(float) * width * height,
-                                        nullptr,
-                                        &errorCode);
+                                               CL_MEM_READ_WRITE,
+                                               sizeof(float) * width * height,
+                                               nullptr,
+                                               &errorCode);
 
     if (errorCode != CL_SUCCESS) {
         returnError(-4);
@@ -162,7 +162,7 @@ void Renderer::run() {
     }
 
     cl::Buffer colorMapBuffer;
-    if (isColorMapSet || !isRenderColorMap) {
+    if (isColorMapSet && isRenderColorMap) {
         colorMapBuffer = cl::Buffer(clInterface.getContext(),
                                     CL_MEM_READ_WRITE,
                                     sizeof(cl_uchar4) * width * height,
@@ -176,7 +176,7 @@ void Renderer::run() {
     }
 
     cl::Buffer normalMapBuffer;
-    if (isNormalMapSet || !isRenderNormalMap) {
+    if (isNormalMapSet && isRenderNormalMap) {
         normalMapBuffer = cl::Buffer(clInterface.getContext(),
                                      CL_MEM_READ_WRITE,
                                      sizeof(cl_uchar4) * width * height,
@@ -228,10 +228,10 @@ void Renderer::run() {
 
     // Dispatch Filter Kernel
     cl::Buffer filteredGrayscaleMapBuffer = cl::Buffer(clInterface.getContext(),
-                                           CL_MEM_READ_WRITE,
-                                           sizeof(float) * width * height,
-                                           nullptr,
-                                           &errorCode);
+                                            CL_MEM_READ_WRITE,
+                                            sizeof(float) * width * height,
+                                            nullptr,
+                                            &errorCode);
     if (errorCode != CL_SUCCESS) {
         returnError(-4);
         return;
